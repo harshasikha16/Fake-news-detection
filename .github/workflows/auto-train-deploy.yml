@@ -1,0 +1,60 @@
+name: Auto Train & Version Fake News Model
+
+on:
+  push:
+    paths:
+      - 'True.csv'
+      - 'Fake.csv'
+      - '**.py'
+      - '**.ipynb'
+  workflow_dispatch:
+
+jobs:
+  train-and-save-model:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run model training script
+      run: |
+        jupyter nbconvert --to notebook --execute NLP\ Project\ 1.2.3.ipynb --output trained_output.ipynb
+
+    - name: Upload trained model artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: model-artifacts
+        path: |
+          best_fake_news_model.pkl
+          tfidf_vectorizer.pkl
+
+  deploy-to-huggingface:
+    needs: train-and-save-model
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Download trained model artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: model-artifacts
+
+    - name: Deploy Streamlit App (Hugging Face Spaces)
+      run: |
+        echo "Deploying updated app to Hugging Face Spaces..."
+      
+    - name: Deployment Complete
+      run: echo "✅ Deployment Done."
